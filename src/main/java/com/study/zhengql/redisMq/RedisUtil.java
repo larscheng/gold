@@ -154,15 +154,15 @@ public class RedisUtil {
 
     public Set<String> getRangeByScore(final String key, int startRange, int endRange, boolean orderByDesc){
         try {
-            ZSetOperations operations = redisTemplate.opsForZSet();
+            ZSetOperations<String, Object> operations = redisTemplate.opsForZSet();
 //            if (orderByDesc) {
 //                return operations.reverseRangeByScore(key, startRange, endRange);
 //            } else {
 //                return operations.rangeByScore(key, startRange, endRange);
 //            }
-            Set set = operations.rangeByScore(key, startRange, endRange);
-            Set set1 = operations.reverseRange(key, startRange, endRange);
-            Set<ZSetOperations.TypedTuple> set2 = operations.reverseRangeWithScores(key, startRange, endRange);
+            Set set = operations.range(key, startRange, endRange);
+            System.out.println("set:"+set.size());
+//            Set<ZSetOperations.TypedTuple> set2 = operations.reverseRangeWithScores(key, startRange, endRange);
             return set;
         } catch (Exception e) {
             e.printStackTrace();
@@ -234,7 +234,7 @@ public class RedisUtil {
     }
 
 
-    public Boolean rightPush(final String key,String... val) {
+    public Boolean rightPush(final String key,String val) {
         try {
             ListOperations operations = redisTemplate.opsForList();
             return operations.rightPush(key,val)>0;

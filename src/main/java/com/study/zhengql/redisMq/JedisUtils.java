@@ -156,7 +156,7 @@ public class JedisUtils {
      * @param val
      * @return
      */
-    public boolean insertList(String key, String... val) {
+    public boolean insertList(String key, String val) {
         if (key == null || val == null) {
             return false;
         }

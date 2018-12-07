@@ -1,13 +1,15 @@
 package com.study.zhengql.redisMq;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
+
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @decription RedisMQ
@@ -52,6 +54,7 @@ public class RedisMQ {
     public boolean addMsgPool(Message message) {
 
         if (null != message) {
+            System.out.println(new Date());
             return jedisUtils.setex(MSG_POOL + message.getId(), message.getBody(), message.getTtl());
         }
         return false;
@@ -102,9 +105,12 @@ public class RedisMQ {
         if (0 < count) {
             // 可根据需求做限制
             List<String> ids = jedisUtils.rangeList(key, 0, count - 1);
-            if (ids != null) {
+            if (ids != null&&!CollectionUtils.isEmpty(ids)) {
                 List<String> result = new ArrayList<>();
-                ids.forEach(l -> result.add(jedisUtils.get(MSG_POOL + l, "")));
+                for (String id:ids){
+                    String str = jedisUtils.get(MSG_POOL + id, "");
+                    result.add(str);
+                }
                 jedisUtils.removeListValue(key, ids);
                 return result;
             } /// if end~
@@ -119,7 +125,6 @@ public class RedisMQ {
      */
     @Scheduled(cron="*/5 * * * * *")
     public void monitor() {
-        System.out.println(new Date()+"----------------monitor");
         // 获取消息路由
         int route_size;
         if (null == routes || 1 > (route_size = routes.size())) {
@@ -131,13 +136,15 @@ public class RedisMQ {
             queue = routes.get(i).getQueue();
             list = routes.get(i).getList();
             set = jedisUtils.getSoredSetByRange(queue, 0, monitorCount, true);
-            if (null != set) {
+            if (null != set&&!CollectionUtils.isEmpty(set)) {
                 long current = System.currentTimeMillis();
                 long score;
                 for (String id : set) {
                     score = jedisUtils.getScore(queue, id).longValue();
                     if (current >= score) {
+                        System.out.println(current+"-----------"+score+","+new Date());
                         // 添加到list
+                        ;
                         if (jedisUtils.insertList(list, id)) {
                             // 删除queue中的元素
                             deMessage(queue, id);
